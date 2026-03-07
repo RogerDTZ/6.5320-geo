@@ -24,7 +24,7 @@ impl Point {
 
 impl PartialEq for Point {
     fn eq(&self, other: &Self) -> bool {
-        Total::new(self.x) == Total::new(other.x) && Total::new(self.y) == Total::new(other.y)
+        Total(self.x) == Total(other.x) && Total(self.y) == Total(other.y)
     }
 }
 
@@ -37,11 +37,11 @@ impl Display for Point {
 }
 
 pub fn sort_x(points: &mut [Point]) {
-    points.sort_by_key(|p| Total::new(p.x));
+    points.sort_by_key(|p| Total(p.x));
 }
 
 pub fn sort_y(points: &mut [Point]) {
-    points.sort_by_key(|p| Total::new(p.y));
+    points.sort_by_key(|p| Total(p.y));
 }
 
 #[cfg(test)]
@@ -55,8 +55,8 @@ mod tests {
         let p2 = Point::new(3.0, 4.0);
         let d1 = p1.distance(&p2);
         let d2 = p2.distance(&p1);
-        assert_eq!(Total::new(d1), Total::new(d2));
-        assert_eq!(Total::new(d1), Total::new(5.0));
+        assert_eq!(Total(d1), Total(d2));
+        assert_eq!(Total(d1), Total(5.0));
     }
 
     #[test]

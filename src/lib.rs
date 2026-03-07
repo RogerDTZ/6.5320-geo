@@ -1,3 +1,3 @@
 mod datatype;
 pub mod point;
-pub mod alg;
+pub mod closest_pair;
