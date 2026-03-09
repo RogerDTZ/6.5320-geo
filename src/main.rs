@@ -42,6 +42,7 @@ async fn main() {
     let mut points: Vec<Point> = Vec::new();
     let mut num_rand_points: usize = 10;
     let mut animated = false;
+    let mut fix_thr = 100.0;
 
     let mut player: Option<visual::Player> = None;
     let mut playback_speed = 1.0;
@@ -128,6 +129,33 @@ async fn main() {
                                     notif.set(format!("Added {} random points", num_rand_points), Some(2.0), None);
                                 }
                                 ui.add(egui::Slider::new(&mut num_rand_points, 10..=100000).text("Number of random points"));
+                            });
+                            ui.horizontal(|ui| {
+                                if ui.button("Interesting Distribution").clicked() {
+                                    if points.len() > 1000 {
+                                        notif.set("Too many points to fix distribution (<= 1000 is recommended), reduce number of points first".into(), Some(3.0), Some(egui::Color32::RED));
+                                        return;
+                                    } else {
+                                        notif.set("Removing points that are too close together to create an interesting distribution".into(), Some(3.0), None);
+                                    }
+                                    let mut cnt = 0;
+                                    while points.len() > 1 {
+                                        let result = closest_pair::closest_pair(points.clone(), &mut visual::NoRecord, false).unwrap();
+                                        if result.dist() < fix_thr {
+                                            points.remove(points.iter().position(|p| p == &result.0).unwrap());
+                                            cnt += 1;
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                    if cnt > 0 {
+                                        notif.set(format!("Removed {} points to create an interesting distribution", cnt), Some(3.0), None);
+                                        player = None;
+                                    } else {
+                                        notif.set("No points removed, distribution is already interesting".into(), Some(3.0), None);
+                                    }
+                                }
+                                ui.add(egui::Slider::new(&mut fix_thr, 10.0..=500.0).text("Distance threshold"));
                             });
                             ui.horizontal(|ui| {
                                 ui.scope(|ui| {
