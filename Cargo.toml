@@ -6,3 +6,9 @@ edition = "2024"
 [dependencies]
 egui-macroquad = "0.17.3"
 rand = "0.10.0"
+
+[profile.release]
+strip = true
+
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
