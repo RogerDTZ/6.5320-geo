@@ -40,9 +40,9 @@ async fn main() {
     let camera = get_view_camera();
 
     let mut points: Vec<Point> = Vec::new();
-    let mut num_rand_points: usize = 10;
+    let mut num_rand_points: usize = 30;
     let mut animated = false;
-    let mut fix_thr = 100.0;
+    let mut fix_thr = 30.0;
 
     let mut player: Option<visual::Player> = None;
     let mut playback_speed = 1.0;
@@ -62,9 +62,13 @@ async fn main() {
             let (mx, my) = mouse_position();
             let p = camera.screen_to_world(Vec2::new(mx, my));
             // Randomly perturb x coordinate
-            points.push(Point::new(p.x as f64 + x_var_rng.random_range(-1e-5..1e-5), p.y as f64));
-            player = None;
-            notif.set(format!("Added point ({:.2}, {:.2})", p.x, p.y), Some(2.0), None);
+            // if x and y in range 0..SPACE
+            let range = 0.0..=(SPACE as f32);
+            if range.contains(&p.x) && range.contains(&p.y) {
+                points.push(Point::new(p.x as f64 + x_var_rng.random_range(-1e-5..1e-5), p.y as f64));
+                player = None;
+                notif.set(format!("Added point ({:.2}, {:.2})", p.x, p.y), Some(2.0), None);
+            }
         }
         if is_mouse_button_pressed(MouseButton::Right) && !pointer_over_egui {
             let (mx, my) = mouse_position();
@@ -103,60 +107,12 @@ async fn main() {
             egui::Window::new("Controls")
                 .title_bar(false)
                 .collapsible(false)
-                .anchor(egui::Align2::LEFT_TOP, egui::vec2(10.0, 10.0))
+                .anchor(egui::Align2::CENTER_TOP, egui::vec2(0.0, 10.0))
                 .resizable(false)
                 .show(egui_ctx, |ui| {
                     ui.horizontal(|ui| {
                         ui.vertical(|ui| {
-                            ui.horizontal(|ui| {
-                                if ui.button("Clear points").clicked() {
-                                    points.clear();
-                                    player = None;
-                                    notif.set("Cleared all points".into(), Some(2.0), None);
-                                }
-                            });
-                            ui.horizontal(|ui| {
-                                if ui.button("Random points").clicked() {
-                                    points.clear();
-                                    points.reserve(num_rand_points);
-                                    player = None;
-                                    let mut rng = rand::rng();
-                                    for _ in 0..num_rand_points {
-                                        let x = rng.random_range(0.0..SPACE as f64);
-                                        let y = rng.random_range(0.0..SPACE as f64);
-                                        points.push(Point::new(x, y));
-                                    }
-                                    notif.set(format!("Added {} random points", num_rand_points), Some(2.0), None);
-                                }
-                                ui.add(egui::Slider::new(&mut num_rand_points, 10..=100000).text("Number of random points"));
-                            });
-                            ui.horizontal(|ui| {
-                                if ui.button("Interesting Distribution").clicked() {
-                                    if points.len() > 1000 {
-                                        notif.set("Too many points to fix distribution (<= 1000 is recommended), reduce number of points first".into(), Some(3.0), Some(egui::Color32::RED));
-                                        return;
-                                    } else {
-                                        notif.set("Removing points that are too close together to create an interesting distribution".into(), Some(3.0), None);
-                                    }
-                                    let mut cnt = 0;
-                                    while points.len() > 1 {
-                                        let result = closest_pair::closest_pair(points.clone(), &mut visual::NoRecord, false).unwrap();
-                                        if result.dist() < fix_thr {
-                                            points.remove(points.iter().position(|p| p == &result.0).unwrap());
-                                            cnt += 1;
-                                        } else {
-                                            break;
-                                        }
-                                    }
-                                    if cnt > 0 {
-                                        notif.set(format!("Removed {} points to create an interesting distribution", cnt), Some(3.0), None);
-                                        player = None;
-                                    } else {
-                                        notif.set("No points removed, distribution is already interesting".into(), Some(3.0), None);
-                                    }
-                                }
-                                ui.add(egui::Slider::new(&mut fix_thr, 10.0..=500.0).text("Distance threshold"));
-                            });
+                            ui.set_min_width(500.0);
                             ui.horizontal(|ui| {
                                 ui.scope(|ui| {
                                     ui.visuals_mut().widgets.inactive.weak_bg_fill = egui::Color32::from_rgb(180, 60, 60);
@@ -190,13 +146,56 @@ async fn main() {
                                         }
                                     }
                                 });
-                                ui.checkbox(&mut animated, "Animated");
-                                if points.len() > 1000 && animated {
+                                let anim_enabled = points.len() <= 1000;
+                                if !anim_enabled && animated {
                                     notif.set("Warning: Animation is slow with too many points, disabled".into(), Some(3.0), Some(egui::Color32::YELLOW));
                                     animated = false;
                                 }
-                                ui.add(egui::Slider::new(&mut playback_speed, 0.1..=10.0).text("Playback speed"));
+                                ui.add_enabled(anim_enabled, egui::Checkbox::new(&mut animated, "Animated"));
+                                ui.add(egui::Slider::new(&mut playback_speed, 1.0..=1000.0).suffix("x").text("Playback speed").logarithmic(true));
                             });
+                            if ui.button("Clear points").clicked() {
+                                points.clear();
+                                points.shrink_to_fit();
+                                player = None;
+                                notif.set("Cleared all points".into(), Some(2.0), None);
+                            }
+                            ui.horizontal(|ui| {
+                                if ui.button("Random points").clicked() {
+                                    points.clear();
+                                    points.reserve(num_rand_points);
+                                    player = None;
+                                    let mut rng = rand::rng();
+                                    for _ in 0..num_rand_points {
+                                        let x = rng.random_range(0.0..SPACE as f64);
+                                        let y = rng.random_range(0.0..SPACE as f64);
+                                        points.push(Point::new(x, y));
+                                    }
+                                    notif.set(format!("Added {} random points", num_rand_points), Some(2.0), None);
+                                }
+                                ui.add(egui::Slider::new(&mut num_rand_points, 10..=1000000).text("Number of random points").clamping(egui::SliderClamping::Never).logarithmic(true));
+                            });
+                            ui.add_enabled_ui(points.len() <= 3000,|ui| { ui.horizontal(|ui| {
+                                if ui.button("Interesting Distribution").clicked() {
+                                    let mut cnt = 0;
+                                    while points.len() > 1 {
+                                        let result = closest_pair::closest_pair(points.clone(), &mut visual::NoRecord, false).unwrap();
+                                        if result.dist() < fix_thr {
+                                            points.remove(points.iter().position(|p| p == &result.0).unwrap());
+                                            cnt += 1;
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                    if cnt > 0 {
+                                        notif.set(format!("Removed {} points to create an interesting distribution", cnt), Some(3.0), None);
+                                        player = None;
+                                    } else {
+                                        notif.set("No points removed, distribution is already interesting".into(), Some(3.0), None);
+                                    }
+                                }
+                                ui.add(egui::Slider::new(&mut fix_thr, 10.0..=100.0).text("Distance threshold").clamping(egui::SliderClamping::Never));
+                            })});
                         });
 
                         ui.separator();

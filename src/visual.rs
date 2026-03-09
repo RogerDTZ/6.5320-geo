@@ -53,7 +53,7 @@ impl Player {
             return;
         }
         self.elapsed += dt;
-        loop {
+        while self.curr_frame < self.fman.frames.len() - 1 {
             let frame = &self.fman.frames[self.curr_frame];
             match frame.lasting {
                 Some(lasting) => {

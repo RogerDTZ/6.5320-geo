@@ -61,10 +61,6 @@ pub fn closest_pair<R: Recording>(mut points: Vec<Point>, record: &mut R, animat
     }
 
     point::sort_x(&mut points);
-    if let Some(w) = points.windows(2).find(|w| Total(w[0].x) == Total(w[1].x)) {
-        return Err(format!("Duplicate X coordinate: {} and {}", w[0], w[1]));
-    }
-
     let xrange = (f64::NEG_INFINITY, f64::INFINITY);
 
     let mut aux = vec![Point::new(0.0, 0.0); points.len()];
@@ -130,7 +126,7 @@ fn closest_pair_rec<R: Recording>(points: &mut [Point], aux: &mut [Point], xrang
         Shape::ShadedRect { xl: xrange.0 as f32, xr: xrange.1 as f32, style: 1 },
         |d| Shape::ShadedRect { xl: (mid_x - d).max(xrange.0) as f32, xr: (mid_x + d).min(xrange.1) as f32, style: 1 }
     ));
-    record.next_frame(Some(1.0));
+    record.next_frame(Some(0.5));
 
     for i in 0..band.len() {
         let hdl_i = record.add(Shape::EmpPoint { x: band[i].x as f32, y: band[i].y as f32, style: 1 });

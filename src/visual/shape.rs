@@ -40,14 +40,14 @@ impl Shape {
             }
             Shape::EmpPoint { x, y, style } => {
                 match style {
-                    0 => { draw_circle(*x, *y, 6.0, rgba_from_str("#ff0000")) }
+                    0 => { draw_circle(*x, *y, point_radius(n) * 1.3, rgba_from_str("#ff0000")) }
                     1 => { draw_circle(*x, *y, point_radius(n), rgba_from_str("#00851d")) }
                     _ => unimplemented!()
                 }
             }
             Shape::EmpLine { x1, y1, x2, y2, style } => {
                 match style {
-                    0 => { draw_line(*x1, *y1, *x2, *y2, 3.0, rgba_from_str("#ff0000")) }
+                    0 => { draw_line(*x1, *y1, *x2, *y2, seg_line_width(n) * 1.3, rgba_from_str("#ff0000")) }
                     1 => { draw_line(*x1, *y1, *x2, *y2, seg_line_width(n), rgba_from_str("#00851d")) }
                     _ => unimplemented!()
                 }
