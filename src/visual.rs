@@ -69,15 +69,12 @@ impl Player {
         }
     }
 
-    pub fn get_shapes(&self) -> Vec<&Shape> {
-        // sort by enum type
-        let mut shapes: Vec<&Shape> = self.fman.frames[self.curr_frame].shapes.iter().collect();
-        shapes.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        shapes
+    pub fn get_shapes(&self) -> &[Shape] {
+        &self.fman.frames[self.curr_frame].shapes
     }
 
     pub fn finished(&self) -> bool {
-        self.curr_frame == self.fman.frames.len() - 1
+        self.fman.frames.is_empty() || self.curr_frame >= self.fman.frames.len() - 1
     }
 }
 
@@ -93,7 +90,8 @@ impl Recording for FrameManager {
     }
 
     fn next_frame(&mut self, lasting: Option<f32>) {
-        let shapes = self.arena.compile();
+        let mut shapes = self.arena.compile();
+        shapes.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         self.frames.push(Frame { shapes, lasting });
     }
 }

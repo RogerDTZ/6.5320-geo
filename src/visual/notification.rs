@@ -12,7 +12,7 @@ impl Notification {
     }
 
     fn default_color() -> egui::Color32 {
-        egui::Color32::from_hex("#FFFFFF").unwrap()
+        egui::Color32::WHITE
     }
 
     pub fn inactive_color(&self) -> egui::Color32 {

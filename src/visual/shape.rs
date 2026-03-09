@@ -10,17 +10,34 @@ pub enum Shape {
     ShadedRect { xl: f32, xr: f32, style: i32 },
 }
 
-fn rgba_from_str(s: &str) -> Color {
-    let hex = s.trim_start_matches('#');
-    let r = u8::from_str_radix(&hex[0..2], 16).unwrap();
-    let g = u8::from_str_radix(&hex[2..4], 16).unwrap();
-    let b = u8::from_str_radix(&hex[4..6], 16).unwrap();
-    let a = if hex.len() == 8 {
-        u8::from_str_radix(&hex[6..8], 16).unwrap()
-    } else {
-        255
-    };
-    Color::from_rgba(r, g, b, a)
+const fn hex_digit(b: u8) -> u8 {
+    match b {
+        b'0'..=b'9' => b - b'0',
+        b'a'..=b'f' => b - b'a' + 10,
+        b'A'..=b'F' => b - b'A' + 10,
+        _ => panic!("invalid hex digit in color literal"),
+    }
+}
+
+const fn hex_byte(hi: u8, lo: u8) -> u8 {
+    hex_digit(hi) << 4 | hex_digit(lo)
+}
+
+const fn parse_hex_color(s: &str) -> (u8, u8, u8, u8) {
+    let b = s.as_bytes();
+    let i = if b[0] == b'#' { 1 } else { 0 };
+    let r = hex_byte(b[i],     b[i + 1]);
+    let g = hex_byte(b[i + 2], b[i + 3]);
+    let v = hex_byte(b[i + 4], b[i + 5]);
+    let a = if b.len() - i == 8 { hex_byte(b[i + 6], b[i + 7]) } else { 0xFF };
+    (r, g, v, a)
+}
+
+macro_rules! hex_color {
+    ($s:literal) => {{
+        const RGBA: (u8, u8, u8, u8) = parse_hex_color($s);
+        Color::from_rgba(RGBA.0, RGBA.1, RGBA.2, RGBA.3)
+    }};
 }
 
 impl Shape {
@@ -33,22 +50,22 @@ impl Shape {
                 let xl = xl.max(0.0);
                 let xr = xr.min(space);
                 match style {
-                    0 => { draw_rectangle(xl, 0.0, xr - xl, space, rgba_from_str("#0f0f0fd4")) }
-                    1 => { draw_rectangle(xl, 0.0, xr - xl, space, rgba_from_str("#dad306a8")) }
+                    0 => { draw_rectangle(xl, 0.0, xr - xl, space, hex_color!("#0f0f0fd4")) }
+                    1 => { draw_rectangle(xl, 0.0, xr - xl, space, hex_color!("#dad306a8")) }
                     _ => unimplemented!()
                 }
             }
             Shape::EmpPoint { x, y, style } => {
                 match style {
-                    0 => { draw_circle(*x, *y, point_radius(n) * 1.3, rgba_from_str("#ff0000")) }
-                    1 => { draw_circle(*x, *y, point_radius(n), rgba_from_str("#00851d")) }
+                    0 => { draw_circle(*x, *y, point_radius(n) * 1.3, hex_color!("#ff0000ff")) }
+                    1 => { draw_circle(*x, *y, point_radius(n), hex_color!("#00851dff")) }
                     _ => unimplemented!()
                 }
             }
             Shape::EmpLine { x1, y1, x2, y2, style } => {
                 match style {
-                    0 => { draw_line(*x1, *y1, *x2, *y2, seg_line_width(n) * 1.3, rgba_from_str("#ff0000")) }
-                    1 => { draw_line(*x1, *y1, *x2, *y2, seg_line_width(n), rgba_from_str("#00851d")) }
+                    0 => { draw_line(*x1, *y1, *x2, *y2, seg_line_width(n) * 1.3, hex_color!("#ff0000ff")) }
+                    1 => { draw_line(*x1, *y1, *x2, *y2, seg_line_width(n), hex_color!("#00851dff")) }
                     _ => unimplemented!()
                 }
             }

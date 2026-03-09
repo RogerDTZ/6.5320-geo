@@ -66,14 +66,14 @@ mod tests {
         let sy = vec![Point::new(1.0, 1.0), Point::new(2.0, 1.1), Point::new(1.9, 2.5)];
         let mut pv1 = pv.clone();
         sort_x(&mut pv1);
-        pv1.iter().zip(sx.iter()).for_each(|(p1, p2)| {
+        for (p1, p2) in pv1.iter().zip(sx.iter()) {
             assert_eq!(p1, p2);
-        });
+        }
         let mut pv2 = pv.clone();
         sort_y(&mut pv2);
-        pv2.iter().zip(sy.iter()).for_each(|(p1, p2)| {
+        for (p1, p2) in pv2.iter().zip(sy.iter()) {
             assert_eq!(p1, p2);
-        });
+        }
     }
     
     #[test]

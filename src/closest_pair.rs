@@ -36,7 +36,7 @@ impl Eq for ByDist {}
 
 impl PartialOrd for ByDist {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 
@@ -149,7 +149,7 @@ fn closest_pair_rec<R: Recording>(points: &mut [Point], aux: &mut [Point], xrang
                     record.add(Shape::EmpPoint { x: band[i].x as f32, y: band[i].y as f32, style: 0 }),
                     record.add(Shape::EmpPoint { x: band[j].x as f32, y: band[j].y as f32, style: 0 }),
                     record.add(Shape::EmpLine { x1: band[i].x as f32, y1: band[i].y as f32, x2: band[j].x as f32, y2: band[j].y as f32, style: 0 }),
-                ].into_iter().filter_map(|h| h).collect();
+                ].into_iter().flatten().collect();
             }
         }
         record.remove(&hdl_i);
@@ -189,10 +189,10 @@ mod tests {
     #[test]
     fn closest_pair1() {
         let points = vec![
-            Point { x: -10.0, y: -10.0 },
-            Point { x: 1.0, y: 1.0 },
-            Point { x: 2.0, y: 2.0 },
-            Point { x: 0.2, y: 0.2 },
+            Point::new(-10.0, -10.0),
+            Point::new(1.0, 1.0),
+            Point::new(2.0, 2.0),
+            Point::new(0.2, 0.2),
         ];
         let res = closest_pair(points.clone(), &mut NoRecord, false).unwrap();
         assert!(res.same_pair(&Pair(points[1], points[3])));
@@ -205,13 +205,12 @@ mod tests {
 
         const N: usize = 1000000;
         const VERIFY_THRESHOLD: usize = 50000;
-        let mut points = Vec::<Point>::new();
-        points.reserve(N);
+        let mut points = Vec::with_capacity(N);
         let mut rng = rand::rng();
         for _ in 0..N {
             let x = rng.random_range(-10000.0..10000.0);
             let y = rng.random_range(-10000.0..10000.0);
-            points.push(Point { x, y });
+            points.push(Point::new(x, y));
         }
 
         let result = closest_pair(points.clone(), &mut NoRecord, false).unwrap();

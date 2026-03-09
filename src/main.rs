@@ -96,7 +96,9 @@ async fn main() {
         }
         if let Some(ref mut player) = player {
             player.update(dt * playback_speed);
-            player.get_shapes().iter().for_each(|shape| { shape.render(points.len(), SPACE) });
+            for shape in player.get_shapes() {
+                shape.render(points.len(), SPACE);
+            }
         }
 
         // UI positioning
@@ -120,7 +122,7 @@ async fn main() {
                                     ui.visuals_mut().widgets.hovered.weak_bg_fill  = egui::Color32::from_rgb(210, 80, 80);
                                     ui.visuals_mut().widgets.active.weak_bg_fill   = egui::Color32::from_rgb(140, 40, 40);
                                     if ui.button("Run").clicked() {
-                                        let mut fman = visual::FrameManager::with_arena_capacity(points.len());
+                                        let mut fman = visual::FrameManager::with_arena_capacity(points.len().min(256));
                                         let start_time = std::time::Instant::now();
                                         let result = closest_pair::closest_pair(points.clone(), &mut fman, animated);
                                         let elapsed = start_time.elapsed();
