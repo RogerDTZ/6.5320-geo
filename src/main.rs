@@ -9,6 +9,7 @@ use geo::point::Point;
 use geo::closest_pair;
 use geo::visual;
 
+const WINDOW_SIZE: i32 = 1000;
 const SPACE: f32 = 1000.0;
 const CANVAS_MARGIN: f32 = 50.0;
 const CANVAS_MARGIN_TOP: f32 = 150.0;
@@ -17,8 +18,8 @@ const CANVAS_PADDING: f32 = 0.0;
 fn window_conf() -> Conf {
     Conf {
         window_title: "Closest Pair Demo".to_string(),
-        window_width: SPACE as i32,
-        window_height: SPACE as i32,
+        window_width: WINDOW_SIZE,
+        window_height: WINDOW_SIZE,
         window_resizable: false,
         high_dpi: true,
         ..Default::default()
@@ -49,8 +50,8 @@ async fn main() {
     let mut notif = visual::Notification::empty();
 
     loop {
-        if screen_height() != SPACE || screen_width() != SPACE {
-            request_new_screen_size(SPACE, SPACE);
+        if screen_height() != WINDOW_SIZE as f32 || screen_width() != WINDOW_SIZE as f32 {
+            request_new_screen_size(WINDOW_SIZE as f32, WINDOW_SIZE as f32);
         }
         clear_background(WHITE);
 
@@ -101,7 +102,7 @@ async fn main() {
         // UI positioning
         set_default_camera();
         egui_macroquad::ui(|egui_ctx| {
-            egui_ctx.set_pixels_per_point(1.5);
+            egui_ctx.set_pixels_per_point(screen_dpi_scale());
             pointer_over_egui = egui_ctx.is_pointer_over_area();
 
             egui::Window::new("Controls")
