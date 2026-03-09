@@ -2,6 +2,14 @@
 
 An interactive visualization of the closest pair of points algorithm.
 
+## Build from source
+
+Install Rust via [rustup](https://rust-lang.org/tools/install/), then:
+
+```bash
+cargo run --release
+```
+
 ## Usage
 
 Left click to add a point, right click to remove a point.
