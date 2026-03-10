@@ -7,20 +7,30 @@ pub trait ApproxEq: Copy {
 }
 
 impl ApproxEq for f32 {
-    fn approx_eq(self, other: f32) -> bool { (self - other).abs() < EPS_F32 }
-    fn approx_lt(self, other: f32) -> bool { other - self > EPS_F32 }
+    fn approx_eq(self, other: f32) -> bool {
+        (self - other).abs() < EPS_F32
+    }
+    fn approx_lt(self, other: f32) -> bool {
+        other - self > EPS_F32
+    }
 }
 
 impl ApproxEq for f64 {
-    fn approx_eq(self, other: f64) -> bool { (self - other).abs() < EPS_F64 }
-    fn approx_lt(self, other: f64) -> bool { other - self > EPS_F64 }
+    fn approx_eq(self, other: f64) -> bool {
+        (self - other).abs() < EPS_F64
+    }
+    fn approx_lt(self, other: f64) -> bool {
+        other - self > EPS_F64
+    }
 }
 
 #[derive(Debug)]
 pub struct Total<T: ApproxEq>(pub T);
 
 impl<T: ApproxEq> PartialEq for Total<T> {
-    fn eq(&self, other: &Self) -> bool { self.0.approx_eq(other.0) }
+    fn eq(&self, other: &Self) -> bool {
+        self.0.approx_eq(other.0)
+    }
 }
 
 impl<T: ApproxEq> Eq for Total<T> {}

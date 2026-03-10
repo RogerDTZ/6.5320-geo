@@ -46,8 +46,8 @@ pub fn sort_y(points: &mut [Point]) {
 
 #[cfg(test)]
 mod tests {
-    use crate::datatype::*;
     use super::{Point, sort_x, sort_y};
+    use crate::datatype::*;
 
     #[test]
     fn test_distance() {
@@ -61,9 +61,21 @@ mod tests {
 
     #[test]
     fn test_pointvec_sort() {
-        let pv = vec![Point::new(1.0, 1.0), Point::new(2.0, 1.1), Point::new(1.9, 2.5)];
-        let sx = vec![Point::new(1.0, 1.0), Point::new(1.9, 2.5), Point::new(2.0, 1.1)];
-        let sy = vec![Point::new(1.0, 1.0), Point::new(2.0, 1.1), Point::new(1.9, 2.5)];
+        let pv = vec![
+            Point::new(1.0, 1.0),
+            Point::new(2.0, 1.1),
+            Point::new(1.9, 2.5),
+        ];
+        let sx = vec![
+            Point::new(1.0, 1.0),
+            Point::new(1.9, 2.5),
+            Point::new(2.0, 1.1),
+        ];
+        let sy = vec![
+            Point::new(1.0, 1.0),
+            Point::new(2.0, 1.1),
+            Point::new(1.9, 2.5),
+        ];
         let mut pv1 = pv.clone();
         sort_x(&mut pv1);
         for (p1, p2) in pv1.iter().zip(sx.iter()) {
@@ -75,10 +87,10 @@ mod tests {
             assert_eq!(p1, p2);
         }
     }
-    
+
     #[test]
     fn test_eps() {
-        assert_eq!(Point::new(1.0, 1.0), Point::new(1.0 + EPS_F64 / 2.0, 1.0                ));
-        assert_ne!(Point::new(1.0, 1.0), Point::new(1.0,                 1.0 + EPS_F64 * 1.1));
+        assert_eq!(Point::new(1.0, 1.0), Point::new(1.0 + EPS_F64 / 2.0, 1.0));
+        assert_ne!(Point::new(1.0, 1.0), Point::new(1.0, 1.0 + EPS_F64 * 1.1));
     }
 }

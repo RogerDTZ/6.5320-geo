@@ -8,7 +8,11 @@ pub struct Notification {
 
 impl Notification {
     pub fn empty() -> Self {
-        Self { text: String::new(), color: Self::default_color(), timer: None }
+        Self {
+            text: String::new(),
+            color: Self::default_color(),
+            timer: None,
+        }
     }
 
     fn default_color() -> egui::Color32 {

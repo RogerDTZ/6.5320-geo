@@ -1,6 +1,9 @@
 use crate::datatype::Total;
 use crate::point::{self, Point};
-use crate::visual::{Recording, NoRecord, shape::{Shape, ShapeHandle}};
+use crate::visual::{
+    NoRecord, Recording,
+    shape::{Shape, ShapeHandle},
+};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Pair(pub Point, pub Point);
@@ -55,7 +58,11 @@ fn merge(a: Option<Pair>, b: Option<Pair>) -> Option<Pair> {
     }
 }
 
-pub fn closest_pair<R: Recording>(mut points: Vec<Point>, record: &mut R, animated: bool) -> Result<Pair, String> {
+pub fn closest_pair<R: Recording>(
+    mut points: Vec<Point>,
+    record: &mut R,
+    animated: bool,
+) -> Result<Pair, String> {
     if points.len() < 2 {
         return Err("At least two points are required".to_string());
     }
@@ -65,19 +72,43 @@ pub fn closest_pair<R: Recording>(mut points: Vec<Point>, record: &mut R, animat
 
     let mut aux = vec![Point::new(0.0, 0.0); points.len()];
     let pair = if animated {
-        closest_pair_rec(&mut points, &mut aux, xrange, 0, record).0.unwrap()
+        closest_pair_rec(&mut points, &mut aux, xrange, 0, record)
+            .0
+            .unwrap()
     } else {
-        let pair = closest_pair_rec(&mut points, &mut aux, xrange, 0, &mut NoRecord).0.unwrap();
-        record.add(Shape::EmpPoint { x: pair.0.x as f32, y: pair.0.y as f32, style: 0 });
-        record.add(Shape::EmpPoint { x: pair.1.x as f32, y: pair.1.y as f32, style: 0 });
-        record.add(Shape::EmpLine { x1: pair.0.x as f32, y1: pair.0.y as f32, x2: pair.1.x as f32, y2: pair.1.y as f32, style: 0 });
+        let pair = closest_pair_rec(&mut points, &mut aux, xrange, 0, &mut NoRecord)
+            .0
+            .unwrap();
+        record.add(Shape::EmpPoint {
+            x: pair.0.x as f32,
+            y: pair.0.y as f32,
+            style: 0,
+        });
+        record.add(Shape::EmpPoint {
+            x: pair.1.x as f32,
+            y: pair.1.y as f32,
+            style: 0,
+        });
+        record.add(Shape::EmpLine {
+            x1: pair.0.x as f32,
+            y1: pair.0.y as f32,
+            x2: pair.1.x as f32,
+            y2: pair.1.y as f32,
+            style: 0,
+        });
         record.next_frame(None);
         pair
     };
     Ok(pair)
 }
 
-fn closest_pair_rec<R: Recording>(points: &mut [Point], aux: &mut [Point], xrange: (f64, f64), level: usize, record: &mut R) -> (Option<Pair>, Vec<ShapeHandle>) {
+fn closest_pair_rec<R: Recording>(
+    points: &mut [Point],
+    aux: &mut [Point],
+    xrange: (f64, f64),
+    level: usize,
+    record: &mut R,
+) -> (Option<Pair>, Vec<ShapeHandle>) {
     let n = points.len();
     if n == 1 {
         return (None, vec![]);
@@ -85,19 +116,30 @@ fn closest_pair_rec<R: Recording>(points: &mut [Point], aux: &mut [Point], xrang
 
     let mid = n / 2;
     let mid_x = points[mid - 1].x;
-    let hdl_div = record.add(Shape::DivLine { x: mid_x as f32, level });
+    let hdl_div = record.add(Shape::DivLine {
+        x: mid_x as f32,
+        level,
+    });
     record.next_frame(Some(0.2));
 
     let (pl, pr) = points.split_at_mut(mid);
     let (al, ar) = aux.split_at_mut(mid);
 
-    let hdl_cover_r = record.add(Shape::ShadedRect { xl: mid_x as f32, xr: xrange.1 as f32, style: 0 });
+    let hdl_cover_r = record.add(Shape::ShadedRect {
+        xl: mid_x as f32,
+        xr: xrange.1 as f32,
+        style: 0,
+    });
     record.next_frame(Some(0.2));
     let (res_l, hdl_l) = closest_pair_rec(pl, al, (xrange.0, mid_x), level + 1, record);
     record.remove(&hdl_cover_r);
     record.next_frame(Some(0.2));
 
-    let hdl_cover_l = record.add(Shape::ShadedRect { xl: xrange.0 as f32, xr: mid_x as f32, style: 0 });
+    let hdl_cover_l = record.add(Shape::ShadedRect {
+        xl: xrange.0 as f32,
+        xr: mid_x as f32,
+        style: 0,
+    });
     record.next_frame(Some(0.2));
     let (res_r, hdl_r) = closest_pair_rec(pr, ar, (mid_x, xrange.1), level + 1, record);
     record.remove(&hdl_cover_l);
@@ -119,23 +161,46 @@ fn closest_pair_rec<R: Recording>(points: &mut [Point], aux: &mut [Point], xrang
     merge_by_y(points, aux, mid);
 
     let d = res.map(|r| r.dist());
-    let band: Vec<&Point> = points.iter()
+    let band: Vec<&Point> = points
+        .iter()
         .filter(|p| d.map_or(true, |d| Total((p.x - mid_x).abs()) <= Total(d)))
         .collect();
     let hdl_band = record.add(d.map_or(
-        Shape::ShadedRect { xl: xrange.0 as f32, xr: xrange.1 as f32, style: 1 },
-        |d| Shape::ShadedRect { xl: (mid_x - d).max(xrange.0) as f32, xr: (mid_x + d).min(xrange.1) as f32, style: 1 }
+        Shape::ShadedRect {
+            xl: xrange.0 as f32,
+            xr: xrange.1 as f32,
+            style: 1,
+        },
+        |d| Shape::ShadedRect {
+            xl: (mid_x - d).max(xrange.0) as f32,
+            xr: (mid_x + d).min(xrange.1) as f32,
+            style: 1,
+        },
     ));
     record.next_frame(Some(0.5));
 
     for i in 0..band.len() {
-        let hdl_i = record.add(Shape::EmpPoint { x: band[i].x as f32, y: band[i].y as f32, style: 1 });
+        let hdl_i = record.add(Shape::EmpPoint {
+            x: band[i].x as f32,
+            y: band[i].y as f32,
+            style: 1,
+        });
         for j in (i + 1)..band.len() {
             if d.is_some_and(|d| Total(band[j].y - band[i].y) > Total(d)) {
                 break;
             }
-            let hdl_j = record.add(Shape::EmpPoint { x: band[j].x as f32, y: band[j].y as f32, style: 1 });
-            let seg = record.add(Shape::EmpLine { x1: band[i].x as f32, y1: band[i].y as f32, x2: band[j].x as f32, y2: band[j].y as f32, style: 1 });
+            let hdl_j = record.add(Shape::EmpPoint {
+                x: band[j].x as f32,
+                y: band[j].y as f32,
+                style: 1,
+            });
+            let seg = record.add(Shape::EmpLine {
+                x1: band[i].x as f32,
+                y1: band[i].y as f32,
+                x2: band[j].x as f32,
+                y2: band[j].y as f32,
+                style: 1,
+            });
             record.next_frame(Some(0.2));
             record.remove(&hdl_j);
             record.remove(&seg);
@@ -146,10 +211,27 @@ fn closest_pair_rec<R: Recording>(points: &mut [Point], aux: &mut [Point], xrang
                     record.remove(&Some(hdl));
                 }
                 hdls_best = vec![
-                    record.add(Shape::EmpPoint { x: band[i].x as f32, y: band[i].y as f32, style: 0 }),
-                    record.add(Shape::EmpPoint { x: band[j].x as f32, y: band[j].y as f32, style: 0 }),
-                    record.add(Shape::EmpLine { x1: band[i].x as f32, y1: band[i].y as f32, x2: band[j].x as f32, y2: band[j].y as f32, style: 0 }),
-                ].into_iter().flatten().collect();
+                    record.add(Shape::EmpPoint {
+                        x: band[i].x as f32,
+                        y: band[i].y as f32,
+                        style: 0,
+                    }),
+                    record.add(Shape::EmpPoint {
+                        x: band[j].x as f32,
+                        y: band[j].y as f32,
+                        style: 0,
+                    }),
+                    record.add(Shape::EmpLine {
+                        x1: band[i].x as f32,
+                        y1: band[i].y as f32,
+                        x2: band[j].x as f32,
+                        y2: band[j].y as f32,
+                        style: 0,
+                    }),
+                ]
+                .into_iter()
+                .flatten()
+                .collect();
             }
         }
         record.remove(&hdl_i);
@@ -217,8 +299,8 @@ mod tests {
         println!("Main algorithm reports: {:?}", result);
         if N <= VERIFY_THRESHOLD {
             let mut answer: Option<Pair> = None;
-            for i in 0..(N-1) {
-                for j in (i+1)..N {
+            for i in 0..(N - 1) {
+                for j in (i + 1)..N {
                     let curr = Pair(points[i], points[j]);
                     answer = merge(answer, Some(curr));
                 }

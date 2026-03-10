@@ -98,7 +98,9 @@ impl Recording for FrameManager {
 
 pub struct NoRecord;
 impl Recording for NoRecord {
-    fn add(&mut self, _shape: Shape) -> Option<ShapeHandle> { None }
+    fn add(&mut self, _shape: Shape) -> Option<ShapeHandle> {
+        None
+    }
 
     fn remove(&mut self, _handle: &Option<ShapeHandle>) {}
 

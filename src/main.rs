@@ -1,12 +1,12 @@
 extern crate rand;
 use rand::prelude::*;
 
-use egui_macroquad::macroquad;
 use egui_macroquad::egui;
+use egui_macroquad::macroquad;
 use macroquad::prelude::*;
 
-use geo::point::Point;
 use geo::closest_pair;
+use geo::point::Point;
 use geo::visual;
 
 const WINDOW_SIZE: i32 = 1000;
@@ -27,11 +27,23 @@ fn window_conf() -> Conf {
 }
 
 fn get_view_camera() -> Camera2D {
-    Camera2D::from_display_rect(Rect::new(-CANVAS_MARGIN, -CANVAS_MARGIN, SPACE + 2.0 * CANVAS_MARGIN, SPACE + CANVAS_MARGIN + CANVAS_MARGIN_TOP))
+    Camera2D::from_display_rect(Rect::new(
+        -CANVAS_MARGIN,
+        -CANVAS_MARGIN,
+        SPACE + 2.0 * CANVAS_MARGIN,
+        SPACE + CANVAS_MARGIN + CANVAS_MARGIN_TOP,
+    ))
 }
 
 fn draw_canvas_rect() {
-    draw_rectangle_lines(-CANVAS_PADDING, -CANVAS_PADDING, SPACE + CANVAS_PADDING * 2.0, SPACE + CANVAS_PADDING * 2.0, 5.0, BLACK);
+    draw_rectangle_lines(
+        -CANVAS_PADDING,
+        -CANVAS_PADDING,
+        SPACE + CANVAS_PADDING * 2.0,
+        SPACE + CANVAS_PADDING * 2.0,
+        5.0,
+        BLACK,
+    );
 }
 
 #[macroquad::main(window_conf)]
@@ -66,9 +78,16 @@ async fn main() {
             // if x and y in range 0..SPACE
             let range = 0.0..=(SPACE as f32);
             if range.contains(&p.x) && range.contains(&p.y) {
-                points.push(Point::new(p.x as f64 + x_var_rng.random_range(-1e-5..1e-5), p.y as f64));
+                points.push(Point::new(
+                    p.x as f64 + x_var_rng.random_range(-1e-5..1e-5),
+                    p.y as f64,
+                ));
                 player = None;
-                notif.set(format!("Added point ({:.2}, {:.2})", p.x, p.y), Some(2.0), None);
+                notif.set(
+                    format!("Added point ({:.2}, {:.2})", p.x, p.y),
+                    Some(2.0),
+                    None,
+                );
             }
         }
         if is_mouse_button_pressed(MouseButton::Right) && !pointer_over_egui {
@@ -81,7 +100,11 @@ async fn main() {
             }) {
                 points.remove(idx);
                 player = None;
-                notif.set(format!("Removed point ({:.2}, {:.2})", p.x, p.y), Some(2.0), None);
+                notif.set(
+                    format!("Removed point ({:.2}, {:.2})", p.x, p.y),
+                    Some(2.0),
+                    None,
+                );
             }
         }
 
@@ -92,7 +115,12 @@ async fn main() {
         // Drawing
         draw_canvas_rect();
         for point in &points {
-            draw_circle(point.x as f32, point.y as f32, visual::adaptive::point_radius(points.len()), BLACK);
+            draw_circle(
+                point.x as f32,
+                point.y as f32,
+                visual::adaptive::point_radius(points.len()),
+                BLACK,
+            );
         }
         if let Some(ref mut player) = player {
             player.update(dt * playback_speed);
