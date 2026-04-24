@@ -12,18 +12,18 @@ jobs:
         include:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            binary: geo.exe
-            asset_name: geo-windows-x64.exe
+            suffix: .exe
+            platform: windows-x64
 
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            binary: geo
-            asset_name: geo-linux-x64
+            suffix: ''
+            platform: linux-x64
 
           - os: macos-latest
             target: aarch64-apple-darwin
-            binary: geo
-            asset_name: geo-macos-arm64
+            suffix: ''
+            platform: macos-arm64
 
     runs-on: ${{ matrix.os }}
 
@@ -42,16 +42,23 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Rename binary
+      - name: Stage binaries
         shell: bash
         run: |
-          cp target/${{ matrix.target }}/release/${{ matrix.binary }} ${{ matrix.asset_name }}
+          cp target/${{ matrix.target }}/release/geo${{ matrix.suffix }} geo-${{ matrix.platform }}${{ matrix.suffix }}
+          cp target/${{ matrix.target }}/release/lsh${{ matrix.suffix }} lsh-${{ matrix.platform }}${{ matrix.suffix }}
 
-      - name: Upload artifact
+      - name: Upload geo artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.asset_name }}
-          path: ${{ matrix.asset_name }}
+          name: geo-${{ matrix.platform }}${{ matrix.suffix }}
+          path: geo-${{ matrix.platform }}${{ matrix.suffix }}
+
+      - name: Upload lsh artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lsh-${{ matrix.platform }}${{ matrix.suffix }}
+          path: lsh-${{ matrix.platform }}${{ matrix.suffix }}
 
   release:
     needs: build
@@ -70,4 +77,7 @@ jobs:
             geo-windows-x64.exe/geo-windows-x64.exe
             geo-linux-x64/geo-linux-x64
             geo-macos-arm64/geo-macos-arm64
+            lsh-windows-x64.exe/lsh-windows-x64.exe
+            lsh-linux-x64/lsh-linux-x64
+            lsh-macos-arm64/lsh-macos-arm64
           generate_release_notes: true
