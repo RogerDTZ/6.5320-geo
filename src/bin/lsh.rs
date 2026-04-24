@@ -37,9 +37,9 @@ fn random_indices(rng: &mut ThreadRng, n: usize, k: usize, dup: bool) -> Vec<usi
 }
 
 fn generate_points(rng: &mut ThreadRng, n: usize, d: usize) -> Vec<Vec<bool>> {
-    (0..n).map(|_| {
-        (0..d).map(|_| rng.random()).collect()
-    }).collect()
+    (0..n)
+        .map(|_| (0..d).map(|_| rng.random()).collect())
+        .collect()
 }
 
 fn mutate_point(rng: &mut ThreadRng, p: &Vec<bool>, r: usize, mutate_dup: bool) -> Vec<bool> {
@@ -58,7 +58,10 @@ struct HashFn {
 
 impl HashFn {
     fn new(rng: &mut ThreadRng, d: usize, k: usize) -> Self {
-        Self { indices: random_indices(rng, d, k, false), table: HashMap::new() }
+        Self {
+            indices: random_indices(rng, d, k, false),
+            table: HashMap::new(),
+        }
     }
 
     pub fn hash(&self, p: &Vec<bool>) -> Vec<bool> {
@@ -80,15 +83,31 @@ fn generate_hash_fns(rng: &mut ThreadRng, l: usize, d: usize, k: usize) -> Vec<H
     (0..l).map(|_| HashFn::new(rng, d, k)).collect()
 }
 
-fn generate_queries(rng: &mut ThreadRng, points: &Vec<Vec<bool>>, m: usize, r: usize, mutate_dup: bool) -> Vec<Vec<bool>> {
-    (0..m).map(|_| {
-        let idx = rng.random_range(0..points.len());
-        mutate_point(rng, &points[idx], r, mutate_dup)
-    }).collect()
+fn generate_queries(
+    rng: &mut ThreadRng,
+    points: &Vec<Vec<bool>>,
+    m: usize,
+    r: usize,
+    mutate_dup: bool,
+) -> Vec<Vec<bool>> {
+    (0..m)
+        .map(|_| {
+            let idx = rng.random_range(0..points.len());
+            mutate_point(rng, &points[idx], r, mutate_dup)
+        })
+        .collect()
 }
 
-
-fn lsh_main(rng: &mut ThreadRng, d: usize, n: usize, m: usize, k: usize, l: usize, r: usize, mutate_dup: bool) -> ANNResult {
+fn lsh_main(
+    rng: &mut ThreadRng,
+    d: usize,
+    n: usize,
+    m: usize,
+    k: usize,
+    l: usize,
+    r: usize,
+    mutate_dup: bool,
+) -> ANNResult {
     let points = generate_points(rng, n, d);
     let queries = generate_queries(rng, &points, m, r, mutate_dup);
 
@@ -101,40 +120,56 @@ fn lsh_main(rng: &mut ThreadRng, d: usize, n: usize, m: usize, k: usize, l: usiz
     }
 
     // answer queries
-    let correct_nn: usize = queries.par_iter().map(|q| {
-        let mut answer_d: Option<usize> = None;
-        let mut seen = 0;
-        'scan: for table in tables.iter() {
-            for p in table.get(q) {
-                let d = hamming_distance(&p, q);
-                if answer_d.map_or(true, |ad| d < ad) {
-                    answer_d = Some(d);
-                }
-                seen += 1;
-                if seen >= 3 * l {
-                    break 'scan;
+    let correct_nn: usize = queries
+        .par_iter()
+        .map(|q| {
+            let mut answer_d: Option<usize> = None;
+            let mut seen = 0;
+            'scan: for table in tables.iter() {
+                for p in table.get(q) {
+                    let d = hamming_distance(&p, q);
+                    if answer_d.map_or(true, |ad| d < ad) {
+                        answer_d = Some(d);
+                    }
+                    seen += 1;
+                    if seen >= 3 * l {
+                        break 'scan;
+                    }
                 }
             }
-        }
 
-        let Some(answer_d) = answer_d else { return 0 };
-        let true_d = points.iter().map(|p| hamming_distance(p, q)).min().unwrap();
-        assert!(true_d <= answer_d);
-        (true_d == answer_d) as usize
-    }).sum();
+            let Some(answer_d) = answer_d else { return 0 };
+            let true_d = points.iter().map(|p| hamming_distance(p, q)).min().unwrap();
+            assert!(true_d <= answer_d);
+            (true_d == answer_d) as usize
+        })
+        .sum();
 
-    ANNResult { correct: correct_nn as f64 / m as f64 }
+    ANNResult {
+        correct: correct_nn as f64 / m as f64,
+    }
 }
-
 
 fn main() {
     let args = Args::parse();
 
     if args.threads > 0 {
-        rayon::ThreadPoolBuilder::new().num_threads(args.threads).build_global().unwrap();
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(args.threads)
+            .build_global()
+            .unwrap();
     }
 
     let mut rng = rand::rng();
-    let result = lsh_main(&mut rng, args.d, args.n, args.m, args.k, args.l, args.r, args.mutate_dup);
+    let result = lsh_main(
+        &mut rng,
+        args.d,
+        args.n,
+        args.m,
+        args.k,
+        args.l,
+        args.r,
+        args.mutate_dup,
+    );
     println!("Correct rate: {:.2}%", result.correct * 100.0);
 }

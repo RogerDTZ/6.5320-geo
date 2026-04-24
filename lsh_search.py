@@ -13,17 +13,31 @@ import pandas as pd
 app = typer.Typer(add_completion=False)
 
 
-def run_lsh(binary: str, d: int, n: int, m: int, k: int, num_l: int, r: int, threads: int) -> float | None:
+def run_lsh(
+    binary: str, d: int, n: int, m: int, k: int, num_l: int, r: int, threads: int
+) -> float | None:
     result = subprocess.run(
-        [binary, str(d), str(n), str(m), str(k), str(num_l), str(r),
-         "--threads", str(threads)],
-        capture_output=True, text=True,
+        [
+            binary,
+            str(d),
+            str(n),
+            str(m),
+            str(k),
+            str(num_l),
+            str(r),
+            "--threads",
+            str(threads),
+        ],
+        capture_output=True,
+        text=True,
     )
     match = re.search(r"Correct rate: ([\d.]+)%", result.stdout)
     return float(match.group(1)) if match else None
 
 
-def best_k_for_l(binary: str, d: int, n: int, m: int, num_l: int, r: int, threads: int, max_k: int) -> tuple[int | None, float]:
+def best_k_for_l(
+    binary: str, d: int, n: int, m: int, num_l: int, r: int, threads: int, max_k: int
+) -> tuple[int | None, float]:
     best_k, best_acc = None, -1.0
     for k in range(1, max_k + 1):
         acc = run_lsh(binary, d, n, m, k, num_l, r, threads)
@@ -48,11 +62,33 @@ def plot_results(coarse: list[dict], fine: list[dict], threshold: float, out: st
     ax2.grid(False)
 
     color_acc = "#1f77b4"
-    color_k   = "#ff7f0e"
+    color_k = "#ff7f0e"
 
-    ax1.plot(df["L"], df["accuracy"], marker="o", color=color_acc, label="Accuracy (%)", zorder=3)
-    ax2.plot(df["L"], df["best_k"],   marker="s", color=color_k,   label="Best k", linestyle="--", zorder=3)
-    ax1.axhline(threshold, color="red", linestyle="--", linewidth=1, label=f"{threshold}% threshold", zorder=3)
+    ax1.plot(
+        df["L"],
+        df["accuracy"],
+        marker="o",
+        color=color_acc,
+        label="Accuracy (%)",
+        zorder=3,
+    )
+    ax2.plot(
+        df["L"],
+        df["best_k"],
+        marker="s",
+        color=color_k,
+        label="Best k",
+        linestyle="--",
+        zorder=3,
+    )
+    ax1.axhline(
+        threshold,
+        color="red",
+        linestyle="--",
+        linewidth=1,
+        label=f"{threshold}% threshold",
+        zorder=3,
+    )
 
     ax2.set_ylim(1, 15)
     ax2.set_yticks(range(1, 16))
@@ -80,18 +116,24 @@ def main(
     n: int,
     m: int,
     r: int,
-    threads:   Annotated[int,   typer.Option(help="Worker threads (0 = all cores)")] = 0,
-    max_l:     Annotated[int,   typer.Option(help="Maximum L (grid doubles from 1)")] = 64,
-    max_k:     Annotated[int,   typer.Option(help="Maximum k to scan")] = 20,
-    threshold: Annotated[float, typer.Option(help="Accuracy threshold (%) triggering fine search")] = 50.0,
-    binary:    Annotated[str,   typer.Option(help="Path to lsh binary")] = "./target/release/lsh",
-    out:       Annotated[str,   typer.Option(help="Output plot filename")] = "lsh_search.pdf",
+    threads: Annotated[int, typer.Option(help="Worker threads (0 = all cores)")] = 0,
+    max_l: Annotated[int, typer.Option(help="Maximum L (grid doubles from 1)")] = 64,
+    max_k: Annotated[int, typer.Option(help="Maximum k to scan")] = 20,
+    threshold: Annotated[
+        float, typer.Option(help="Accuracy threshold (%) triggering fine search")
+    ] = 50.0,
+    binary: Annotated[
+        str, typer.Option(help="Path to lsh binary")
+    ] = "./target/release/lsh",
+    out: Annotated[str, typer.Option(help="Output plot filename")] = "lsh_search.pdf",
 ):
-    typer.echo(f"Grid search: d={d} n={n} m={m} r={r} | threads={threads} | L=1..{max_l} k=1..{max_k} threshold={threshold}%")
+    typer.echo(
+        f"Grid search: d={d} n={n} m={m} r={r} | threads={threads} | L=1..{max_l} k=1..{max_k} threshold={threshold}%"
+    )
     typer.echo("-" * 60)
 
     coarse: list[dict] = []
-    fine:   list[dict] = []
+    fine: list[dict] = []
     fine_done = False
     prev_l: int | None = None
 
@@ -110,7 +152,9 @@ def main(
         acc = scan(num_l, coarse)
 
         if not fine_done and acc >= threshold and prev_l is not None:
-            typer.echo(f"\n--- accuracy crossed {threshold}%, fine search L={prev_l+1}..{num_l-1} ---")
+            typer.echo(
+                f"\n--- accuracy crossed {threshold}%, fine search L={prev_l+1}..{num_l-1} ---"
+            )
             for mid in range(prev_l + 1, num_l):
                 scan(mid, fine)
             typer.echo("--- fine search complete ---\n")
