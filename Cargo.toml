@@ -6,6 +6,8 @@ edition = "2024"
 [dependencies]
 egui-macroquad = { version = "0.17.3", default-features = false }
 rand = "0.10.0"
+clap = { version = "4", features = ["derive"] }
+rayon = "1"
 
 [profile.release]
 strip = true
